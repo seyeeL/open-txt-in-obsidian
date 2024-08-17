@@ -31,7 +31,8 @@ class TxtView extends TextFileView {
     this.contentEl.empty()
     this.textArea = this.contentEl.createEl('textarea', {
       attr: {
-        class: 'txt-view-textarea'
+        class: 'txt-view-textarea',
+        spellcheck: 'false' // 添加这一行来禁用拼写检查
       }
     })
     this.textArea.value = this.data
