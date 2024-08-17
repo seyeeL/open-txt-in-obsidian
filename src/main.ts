@@ -79,7 +79,7 @@ export default class TxtAsMdPlugin extends Plugin {
 
     this.registerExtensions(['txt'], VIEW_TYPE_TXT)
 
-    // 注册文件菜单项
+    // 注册文件菜单项 (md to txt)
     this.registerEvent(
       this.app.workspace.on('file-menu', (menu, file) => {
         if (file instanceof TFile && file.extension === 'md') {
@@ -87,13 +87,27 @@ export default class TxtAsMdPlugin extends Plugin {
             item
               .setTitle('Convert to .txt')
               .setIcon('file-text')
-              .onClick(() => this.convertToTxt(file))
+              .onClick(() => this.convertFile(file, 'txt'))
           })
         }
       })
     )
 
-    // 添加命令
+    // 注册文件菜单项 (txt to md)
+    this.registerEvent(
+      this.app.workspace.on('file-menu', (menu, file) => {
+        if (file instanceof TFile && file.extension === 'txt') {
+          menu.addItem((item: MenuItem) => {
+            item
+              .setTitle('Convert to .md')
+              .setIcon('markdown')
+              .onClick(() => this.convertFile(file, 'md'))
+          })
+        }
+      })
+    )
+
+    // 添加命令 (md to txt)
     this.addCommand({
       id: 'convert-md-to-txt',
       name: 'Convert current file to .txt',
@@ -101,7 +115,23 @@ export default class TxtAsMdPlugin extends Plugin {
         const file = this.app.workspace.getActiveFile()
         if (file && file.extension === 'md') {
           if (!checking) {
-            this.convertToTxt(file)
+            this.convertFile(file, 'txt')
+          }
+          return true
+        }
+        return false
+      }
+    })
+
+    // 添加命令 (txt to md)
+    this.addCommand({
+      id: 'convert-txt-to-md',
+      name: 'Convert current file to .md',
+      checkCallback: (checking: boolean) => {
+        const file = this.app.workspace.getActiveFile()
+        if (file && file.extension === 'txt') {
+          if (!checking) {
+            this.convertFile(file, 'md')
           }
           return true
         }
@@ -110,8 +140,8 @@ export default class TxtAsMdPlugin extends Plugin {
     })
   }
 
-  async convertToTxt(file: TFile) {
-    const newPath = file.path.replace(/\.md$/, '.txt')
+  async convertFile(file: TFile, newExtension: string) {
+    const newPath = file.path.replace(/\.[^.]+$/, `.${newExtension}`)
 
     try {
       await this.app.fileManager.renameFile(file, newPath)
