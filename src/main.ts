@@ -1,4 +1,4 @@
-import { Plugin, TextFileView, WorkspaceLeaf } from 'obsidian'
+import { Plugin, TextFileView, WorkspaceLeaf, TFile, Notice, Menu, MenuItem } from 'obsidian'
 
 const VIEW_TYPE_TXT = 'txt-view'
 
@@ -78,5 +78,47 @@ export default class TxtAsMdPlugin extends Plugin {
     this.registerView(VIEW_TYPE_TXT, (leaf: WorkspaceLeaf) => new TxtView(leaf))
 
     this.registerExtensions(['txt'], VIEW_TYPE_TXT)
+
+    // 注册文件菜单项
+    this.registerEvent(
+      this.app.workspace.on('file-menu', (menu, file) => {
+        if (file instanceof TFile && file.extension === 'md') {
+          menu.addItem((item: MenuItem) => {
+            item
+              .setTitle('Convert to .txt')
+              .setIcon('file-text')
+              .onClick(() => this.convertToTxt(file))
+          })
+        }
+      })
+    )
+
+    // 添加命令
+    this.addCommand({
+      id: 'convert-md-to-txt',
+      name: 'Convert current file to .txt',
+      checkCallback: (checking: boolean) => {
+        const file = this.app.workspace.getActiveFile()
+        if (file && file.extension === 'md') {
+          if (!checking) {
+            this.convertToTxt(file)
+          }
+          return true
+        }
+        return false
+      }
+    })
+  }
+
+  async convertToTxt(file: TFile) {
+    const newPath = file.path.replace(/\.md$/, '.txt')
+
+    try {
+      await this.app.fileManager.renameFile(file, newPath)
+      new Notice(`File converted: ${newPath}`)
+    } catch (error) {
+      console.error('Error converting file:', error)
+      new Notice('Error converting file. Check console for details.')
+    }
   }
 }
